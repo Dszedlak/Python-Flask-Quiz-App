@@ -19,10 +19,7 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit(): 
             data = {
-                    "email": form.email.data,
                     "username": form.username.data,
-                    "first_name": form.first_name.data,
-                    "last_name": form.last_name.data,
                     "password_hash":(hash_pass(form.password.data)),       
         }
             json_data = json.dumps(data)
@@ -43,7 +40,7 @@ def login():
 
     if form.validate_on_submit():
         data = {
-                "email": form.email.data,
+                "username": form.username.data,
                 "password_hash":(hash_pass(form.password.data)),       
         }
 

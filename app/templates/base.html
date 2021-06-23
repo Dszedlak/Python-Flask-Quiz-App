@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>{{ title }} | DS RECORDS</title>
+    <title>{{ title }} | 21st Century Quizmen</title>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
@@ -20,10 +20,10 @@
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand topnav" href="{{ url_for('home.homepage') }}">DSR</a>
+              <a class="navbar-brand topnav" href="{{ url_for('home.homepage') }}">Quiz</a>
               {% if session['logged_in'] %}
-              <a class="navbar-brand topnav" href="{{ url_for('store.browse_store') }}">Browse Records</a>
-              <a class="navbar-brand topnav" href="{{ url_for('store.add_record') }}">Add Record</a>
+              <a class="navbar-brand topnav" href="{{ url_for('store.browse_store') }}">Quiz Admin</a>
+              <a class="navbar-brand topnav" href="{{ url_for('store.add_record') }}">How To Play</a>
               {% endif %}
           </div>
           <div>

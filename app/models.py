@@ -56,21 +56,21 @@ def add_user(users_json):
     user = json.loads(users_json)
 
     with engine.connect() as connection:
-        c = connection.execute("""INSERT INTO users(email, username, first_name, last_name, password_hash, is_admin) VALUES(?,?,?,?,?,?)""", user["email"], user["username"], user["first_name"], user["last_name"], user["password_hash"], "0")
+        c = connection.execute("""INSERT INTO users(username, password_hash, is_admin) VALUES(?,?,?)""", user["username"], user["password_hash"], "0")
 
 def login_user(user_json):
     user = json.loads(user_json)
     with engine.connect() as connection:
-            c = connection.execute("""SELECT * FROM users WHERE email = '%s' AND password_hash = '%s'"""%(user['email'], user['password_hash']))
+            c = connection.execute("""SELECT * FROM users WHERE username = '%s' AND password_hash = '%s'"""%(user['username'], user['password_hash']))
             user_row = c.fetchone()
             if user_row:
                 flash('You are logged in!')
                 session['logged_in']=True
-                session['username']=user_row[3]
+                session['username']=user_row[1]
                 session['user_id']=user_row[0]
 
-                print(user_row[6])
-                if user_row[6] == 1: 
+                print(user_row[1])
+                if user_row[3] == 1: 
                     session['is_admin']=adminHash
                 else:
                     session['is_admin']="You Are Not The Admin Fam."
