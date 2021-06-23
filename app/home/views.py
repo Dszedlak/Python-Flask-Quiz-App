@@ -13,16 +13,9 @@ def homepage():
     return render_template('home/index.html', title="Welcome")
 
 
-@home.route('/quiz')
+@home.route('/dashboard')
 def dashboard():
     """
     Render the dashboard template on the /dashboard route
     """
-    return render_template('home/quiz.html', title="Dashboard")
-
-@home.route('/quiz-admin')
-def dashboard():
-    """
-    Render the dashboard template on the /dashboard route
-    """
-    return render_template('home/quizAdmin.html', title="Quiz Admin")
+    return render_template('home/dashboard.html', title="Dashboard")
