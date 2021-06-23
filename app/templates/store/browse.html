@@ -1,0 +1,43 @@
+<!-- app/templates/store/add.html -->
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+{% block title %}Browse{% endblock %}
+{% block body %}
+<div class="content-section">
+  <div class="center">
+    <h1>Database:</h1>
+    <form class="search-form" method="GET" action="/store" >
+      <input class="form-control" id="search" name="search"  placeholder="Search.."/>
+      <input class="search-button" type="submit" style="display: none;" value="Search"/>
+    </form>
+    <h3 class="search-query"><span id="query-output" class="query"></span></h3>
+    <script src="static\script.js"></script>
+    <div class="container">
+    {% for record in records %}
+        {% for item in record['records'] %}
+          <div class="row">
+            <div class="col-sm">
+              <tr><img src="{{ url_for('static', filename = 'img/uploads/'+item['album_cover'])}}" class="record_cover_image" alt=""></tr>
+              <th></th>
+            </div>
+            <div class="col-sm">
+              <table class="data-table">
+                  <th></th>
+                  <tr><td>{{item['artist']}} - {{item['album_name']}}</td></tr>
+                  <tr><td>Label: {{item['label']}}</td></tr>
+                  <tr><td>Format: {{item['format']}}</td></tr>
+                  <tr><td>Country: {{item['country']}}</td></tr>
+                  <tr><td>Year released: {{item['year_released']}}</td></tr>
+                  <tr><th>Genre: {{item['genre']}}</td></tr>
+                  <tr><td>Style: {{item['style']}}</td></tr>
+                </table>
+            </div>
+          </div>
+        {% endfor %}
+    {% endfor %}
+  </div>
+  </div>
+</div>
+
+
+{% endblock %}
