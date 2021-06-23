@@ -11,7 +11,7 @@ import os.path
 
 from app import engine
 from .forms import app
-from ..models import add_music, load_music, session, login_required, search_music
+from ..models import add_music, load_music, session, login_required, search_music, is_quiz_admin
 import json
 
 app.config["IMAGE_UPLOADS"] = "app/static/img/uploads"
@@ -37,7 +37,7 @@ def browse_store():
     return render_template('store/browse.html', records=records, title='Browse Store', )
 
 @store.route('/store/add', methods=['GET', 'POST'])
-@login_required
+@is_quiz_admin
 def add_record():
     
     form = AddRecordForm()

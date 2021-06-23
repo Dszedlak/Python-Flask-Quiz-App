@@ -6,6 +6,7 @@ from app import engine
 import json
 
 adminHash = "1c0f000b72e6ce080d17c333068d3678"
+quizadminhash = "4f511ca2fcb715e2dd48ba684812e8d4"
 
 class User():
     tablename = "users"
@@ -13,7 +14,7 @@ class User():
     if not os.path.exists('sqlite:///database.db'):
         if not engine.dialect.has_table(engine, tablename):
             with engine.connect() as connection:
-                c = connection.execute("""CREATE TABLE users(user_id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, username TEXT, first_name TEXT, last_name TEXT, password_hash TEXT, is_admin INTEGER )""")
+                c = connection.execute("""CREATE TABLE users(user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password_hash TEXT, is_admin INTEGER, is_quiz_admin INTEGER )""")
 
 class Store():
     tablename = "music"
@@ -56,7 +57,7 @@ def add_user(users_json):
     user = json.loads(users_json)
 
     with engine.connect() as connection:
-        c = connection.execute("""INSERT INTO users(username, password_hash, is_admin) VALUES(?,?,?)""", user["username"], user["password_hash"], "0")
+        c = connection.execute("""INSERT INTO users(username, password_hash, is_admin, is_quiz_admin) VALUES(?,?,?,?)""", user["username"], user["password_hash"], "0", "0")
 
 def login_user(user_json):
     user = json.loads(user_json)
@@ -69,9 +70,13 @@ def login_user(user_json):
                 session['username']=user_row[1]
                 session['user_id']=user_row[0]
 
-                print(user_row[1])
+                print(user_row[3])
+                print(user_row[4])
+
                 if user_row[3] == 1: 
                     session['is_admin']=adminHash
+                elif user_row[4]== 1:
+                    session['is_quiz_admin']=quizadminhash
                 else:
                     session['is_admin']="You Are Not The Admin Fam."
 
@@ -107,7 +112,17 @@ def is_admin(f):
             flash('Your are prohibited from viewing this page.')
             return redirect(url_for('home.dashboard'))
     return wrap    
-   
+
+def is_quiz_admin(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if 'is_quiz_admin' in session and session['is_quiz_admin']==quizadminhash:
+            return f(*args, **kwargs)
+        else:
+            flash('You are prohibited from viewing this page.')
+            return redirect(url_for('home.dashboard'))
+    return wrap
+
 def clear_session():
     session.clear()
     flash('you are now logged out','success')

@@ -20,10 +20,10 @@
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand topnav" href="{{ url_for('home.homepage') }}">Quiz</a>
+              <a class="navbar-brand topnav" href="{{ url_for('home.homepage') }}">The Rules</a>
               {% if session['logged_in'] %}
-              <a class="navbar-brand topnav" href="{{ url_for('store.browse_store') }}">Quiz Admin</a>
-              <a class="navbar-brand topnav" href="{{ url_for('store.add_record') }}">How To Play</a>
+              <a class="navbar-brand topnav" href="{{ url_for('store.browse_store') }}">The Quiz</a>
+              <a class="navbar-brand topnav" href="{{ url_for('store.add_record') }}">Quiz Admin</a>
               {% endif %}
           </div>
           <div>
