@@ -1,20 +1,64 @@
 import sqlite3, os, hashlib
 from flask import Flask, jsonify, render_template, request, g, flash, session, redirect, url_for
-
+from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
-from app import engine 
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
+from sqlalchemy import create_engine
+
+from app import db, login_manager
 import json
+
+engine = create_engine('sqlite:///database.db') 
 
 adminHash = "1c0f000b72e6ce080d17c333068d3678"
 quizadminhash = "4f511ca2fcb715e2dd48ba684812e8d4"
 
-class User():
-    tablename = "users"
-    #create database if it doesn't exist yet
-    if not os.path.exists('sqlite:///database.db'):
-        if not engine.dialect.has_table(engine, tablename):
-            with engine.connect() as connection:
-                c = connection.execute("""CREATE TABLE users(user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password_hash TEXT, is_admin INTEGER, is_quiz_admin INTEGER )""")
+class User(UserMixin, db.Model):
+    
+    """
+    Create an Users table
+    """
+    
+    # Ensures table will be named in plural and not in singular
+    # as is the name of the model
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(60), index=True, unique=True)
+    password_hash = db.Column(db.String(128))
+    is_quiz_admin = db.Column(db.Integer)
+    is_admin = db.Column(db.Integer)
+    quizes_won = db.Column(db.Integer)
+    quizes_hosted = db.Column(db.Integer)
+
+    @property
+    def password(self):
+        """
+        Prevent pasword from being accessed
+        """
+        raise AttributeError('password is not a readable attribute.')
+
+    @password.setter
+    def password(self, password):
+        """
+        Set password to a hashed password
+        """
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        """
+        Check if hashed password matches actual password
+        """
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return '{}'.format(self.username)
+
+# Set up user_loader
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 class Store():
     tablename = "music"
@@ -22,8 +66,6 @@ class Store():
         if not engine.dialect.has_table(engine, tablename):
             with engine.connect() as connection:
                 c = connection.execute("""CREATE TABLE music(item_id INTEGER PRIMARY KEY AUTOINCREMENT, artist TEXT, album_name TEXT, album_cover TEXT, label TEXT, format TEXT, country TEXT, year_released TEXT, genre TEXT, style TEXT, user_id_ref INTEGER)""")
-
-        
 
 def add_music(record_json, img_ref, user_id):
 
@@ -51,47 +93,6 @@ def search_music(term):
         music = [{'records':[dict(artist=row[1], album_name=row[2], album_cover=row[3],label=row[4], format=row[5], country=row[6], year_released=row[7], genre=row[8], style=row[9], user_id_ref=row[10]) for row in d.fetchall()]}]
 
         return music
-  
-def add_user(users_json):
-
-    user = json.loads(users_json)
-
-    with engine.connect() as connection:
-        c = connection.execute("""INSERT INTO users(username, password_hash, is_admin, is_quiz_admin) VALUES(?,?,?,?)""", user["username"], user["password_hash"], "0", "0")
-
-def login_user(user_json):
-    user = json.loads(user_json)
-    with engine.connect() as connection:
-            c = connection.execute("""SELECT * FROM users WHERE username = '%s' AND password_hash = '%s'"""%(user['username'], user['password_hash']))
-            user_row = c.fetchone()
-            if user_row:
-                flash('You are logged in!')
-                session['logged_in']=True
-                session['username']=user_row[1]
-                session['user_id']=user_row[0]
-
-                print(user_row[3])
-                print(user_row[4])
-
-                if user_row[3] == 1: 
-                    session['is_admin']=adminHash
-                elif user_row[4]== 1:
-                    session['is_quiz_admin']=quizadminhash
-                else:
-                    session['is_admin']="You Are Not The Admin Fam."
-
-                return True
-
-                #print(session)
-            else: 
-                flash('Invalid email or password.','success')
-                return False
-          
-# Create password hashes
-def hash_pass(passw):
-	m = hashlib.md5()
-	m.update(passw.encode('utf-8'))
-	return m.hexdigest()
 
 def login_required(f):
     @wraps(f)

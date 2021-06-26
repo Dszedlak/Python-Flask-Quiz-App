@@ -23,11 +23,16 @@
               <a class="navbar-brand topnav" href="{{ url_for('home.homepage') }}">The Rules</a>
               {% if session['logged_in'] %}
               <a class="navbar-brand topnav" href="{{ url_for('store.browse_store') }}">The Quiz</a>
+              {% endif %}
+              {% if session ['is_quiz_admin']%}
               <a class="navbar-brand topnav" href="{{ url_for('store.add_record') }}">Quiz Admin</a>
               {% endif %}
           </div>
           <div>
               <ul class="nav navbar-nav navbar-right ">
+                {% if session ['is_admin'] %}
+                <li><a href="{{ url_for('admin.Admin_home') }}">Admin</a></li>
+                {% endif %}
                 {% if session['logged_in'] %}
                 <li><a href="{{ url_for('home.homepage') }}">Home</a></li>
                     <li class="user_tag">
@@ -42,6 +47,7 @@
                 <li><a href="{{ url_for('auth.register') }}">Register</a></li>
                 <li><a href="{{ url_for('auth.login') }}">Login</a></li>
                 {% endif %}
+                
               </ul>
           </div>
         </div>
