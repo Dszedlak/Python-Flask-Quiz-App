@@ -22,7 +22,7 @@ def register():
         user = User(username=form.username.data,
                             password=form.password.data,
                             is_quiz_admin=0,
-                            is_admin=0,
+                            is_admin=0, 
                             quizes_won=0,
                             quizes_hosted=0
                             )
@@ -68,7 +68,7 @@ def login():
             if user.is_admin == 1:
                 session['is_admin'] = adminHash
             if user.is_quiz_admin == 1:
-                session['is_quiz_admin'] == quizadminhash
+                session['is_quiz_admin'] = quizadminhash
             
             # redirect to the dashboard page after login
             return redirect(url_for('home.dashboard'))

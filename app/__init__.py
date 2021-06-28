@@ -10,8 +10,7 @@ from config import app_config
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from functools import wraps
-
-
+import flask_uploads
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -31,12 +30,14 @@ def create_app(config_name):
 
     from app import models
 
-    #with app.app_context():
-        #db.create_all()
+    with app.app_context():
+        db.create_all()
 
-    from .models import User
+    from .models import User, Question
     admin = Admin(app, index_view=MyAdminIndexView())
     admin.add_view(Controller(User, db.session))
+    admin.add_view(Controller(Question, db.session))
+
 
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)
@@ -44,8 +45,8 @@ def create_app(config_name):
     from .home import home as home_blueprint
     app.register_blueprint(home_blueprint)
 
-    from .store import store as store_blueprint
-    app.register_blueprint(store_blueprint)
+    from .quiz import quiz as quiz_blueprint
+    app.register_blueprint(quiz_blueprint)
 
     return app
     

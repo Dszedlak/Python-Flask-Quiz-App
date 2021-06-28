@@ -1,0 +1,36 @@
+<!-- app/templates/store/add.html -->
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+{% block title %}Browse{% endblock %}
+{% block body %}
+<div class="content-section">
+  <div class="center">
+    <h1>Quiz:</h1>
+    <script src="static\script.js"></script>
+    <div class="container">
+    {% for record in records %}
+        {% for item in record['questions'] %}
+          <div class="row">
+            <div class="col-sm">
+              <tr><img src="{{ url_for('static', filename = 'img/uploads/'+item['file'])}}" class="file_image" alt=""></tr>
+              <th></th>
+            </div>
+            <div class="col-sm">
+              <table class="data-table">
+                  <th></th>
+                  <tr><td>Round: {{item['round']}}</td></tr>
+                  <tr><td>Question: {{item['question']}}</td></tr>
+                  <tr><td>Additional Info: {{item['additional_info']}}</td></tr>
+                  <tr><td>Points Worth: {{item['points_worth']}}</td></tr>
+                  <tr><th>Correct Answer: {{item['correct_answer']}}</td></tr>
+                </table>
+            </div>
+          </div>
+        {% endfor %}
+    {% endfor %}
+  </div>
+  </div>
+</div>
+
+
+{% endblock %}

@@ -1,3 +1,4 @@
+from enum import auto
 import sqlite3, os, hashlib
 from flask import Flask, jsonify, render_template, request, g, flash, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -9,7 +10,7 @@ from sqlalchemy import create_engine
 from app import db, login_manager
 import json
 
-engine = create_engine('sqlite:///database.db') 
+engine = create_engine('sqlite:////Users/DAVID/Documents/GitHub/Quiz/app/database.db') 
 
 adminHash = "1c0f000b72e6ce080d17c333068d3678"
 quizadminhash = "4f511ca2fcb715e2dd48ba684812e8d4"
@@ -60,39 +61,43 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-class Store():
-    tablename = "music"
-    if not os.path.exists('sqlite:///database.db'):
-        if not engine.dialect.has_table(engine, tablename):
-            with engine.connect() as connection:
-                c = connection.execute("""CREATE TABLE music(item_id INTEGER PRIMARY KEY AUTOINCREMENT, artist TEXT, album_name TEXT, album_cover TEXT, label TEXT, format TEXT, country TEXT, year_released TEXT, genre TEXT, style TEXT, user_id_ref INTEGER)""")
+class Question(db.Model):
+    __tablename__ = 'quiz'
 
-def add_music(record_json, img_ref, user_id):
+    qid = db.Column(db.Integer, primary_key=True)
+    round = db.Column(db.String(250))
+    question = db.Column(db.String(250))
+    additional_info = db.Column(db.String(250))
+    file = db.Column(db.String(250))
+    points_worth = db.Column(db.Integer())
+    correct_answer = db.Column(db.String(250))
 
-    record = json.loads(record_json) 
+def add_questions(question_json, img_ref):
+
+    question_lst = json.loads(question_json) 
     with engine.connect() as connection:
-        c = connection.execute("""INSERT INTO music(artist, album_name, album_cover, label, format, country, year_released, genre, style, user_id_ref) VALUES(?,?,?,?,?,?,?,?,?,?)""", record["artist"], record["album_name"], img_ref, record["label"], record["format"], record["country"], record["year_released"], record["genre"], record["style"], user_id)
+        c = connection.execute("""INSERT INTO quiz(round, question, additional_info, file, points_worth, correct_answer) VALUES(?,?,?,?,?,?)""", question_lst["round"], question_lst["question"], question_lst["additional_info"], img_ref, question_lst["points_worth"], question_lst["correct_answer"])
         
 
-def load_music():
+def load_questions():
     with engine.connect() as connection:
-        c = connection.execute("""SELECT * FROM music""")
-        music = [{'records':[dict(artist=row[1], album_name=row[2], album_cover=row[3],label=row[4], format=row[5], country=row[6], year_released=row[7], genre=row[8], style=row[9], user_id_ref=row[10]) for row in c.fetchall()]}]
-        #print(music)
+        c = connection.execute("""SELECT * FROM quiz""")
+        questions = [{'questions':[dict(round=row[1], question=row[2], additional_info=row[3],file=row[4], points_worth=row[5], correct_answer=row[6]) for row in c.fetchall()]}]
+        print(questions)
         
-        return music
+        return questions
 
-def search_music(term):
-    with engine.connect() as connection:
-        c = connection.execute("""DROP TABLE v_music""")
-        c  = connection.execute("""CREATE VIRTUAL TABLE v_music USING FTS3(item_id, artist, album_name, album_cover, label, format, country, year_released, genre, style, user_id_ref)""")
-        c = connection.execute("""INSERT INTO v_music SELECT * FROM music""")
-        d = connection.execute(""" SELECT * FROM v_music WHERE v_music MATCH '%s' """%term)
-        a = connection.execute(""" SELECT * FROM v_music""")
+# def search_questions(term):
+#     with engine.connect() as connection:
+#         c = connection.execute("""DROP TABLE v_quiz""")
+#         c  = connection.execute("""CREATE VIRTUAL TABLE v_quiz USING FTS3(item_id, artist, album_name, album_cover, label, format, country, year_released, genre, style, user_id_ref)""")
+#         c = connection.execute("""INSERT INTO v_quiz SELECT * FROM quiz""")
+#         d = connection.execute(""" SELECT * FROM v_quiz WHERE v_quiz MATCH '%s' """%term)
+#         a = connection.execute(""" SELECT * FROM v_quiz""")
 
-        music = [{'records':[dict(artist=row[1], album_name=row[2], album_cover=row[3],label=row[4], format=row[5], country=row[6], year_released=row[7], genre=row[8], style=row[9], user_id_ref=row[10]) for row in d.fetchall()]}]
+#         music = [{'questions':[dict(artist=row[1], album_name=row[2], album_cover=row[3],label=row[4], format=row[5], country=row[6], year_released=row[7], genre=row[8], style=row[9], user_id_ref=row[10]) for row in d.fetchall()]}]
 
-        return music
+#         return music
 
 def login_required(f):
     @wraps(f)
