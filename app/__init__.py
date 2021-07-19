@@ -5,6 +5,8 @@ from flask_login import LoginManager, UserMixin, current_user
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import abort
+from flask_socketio import SocketIO, emit
+
 # local imports
 from config import app_config
 from flask_admin import Admin
@@ -20,13 +22,15 @@ def create_app(config_name):
     app.config['SECRET_KEY']='p9Bv<3Eid9%$i01'
     app.config.from_object(app_config['development'])
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     Bootstrap(app)
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_message = "You must be logged in to access this page."
     login_manager.login_view = "auth.login"
     migrate = Migrate(app, db)
+
+    SocketIO(app, logger=True, engineio_logger=True)
 
     from app import models
 

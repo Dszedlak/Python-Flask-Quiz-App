@@ -1,0 +1,40 @@
+<!-- app/templates/store/add.html -->
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+{% block title %}Browse{% endblock %}
+{% block body %}
+<div class="content-section">
+  <div class="center">
+    <h1>Question: {{ qid }} | Round: {{records[0]}} </h1>
+    <script src="static\script.js"></script>
+    <div class="container">
+          <div class="row">
+            <div class="col-sm">
+              <table class="data-table">
+                  <th></th>
+                  <tr><td>Question: {{records[1]}}</td></tr>
+                  <tr><td>Additional Info: {{records[2]}}</td></tr>
+                  <tr><td>Points Worth: {{records[4]}}</td></tr>
+                  <tr><th>Correct Answer: {{records[5] }}</td></tr>
+                  <tr name = "question_type" value="{{records[6]}}"><th name = "question_type" value="{{records[6]}}">Question Type: {{ records[6] }}</th></tr>
+                  <tr><th><img src="{{ url_for('static', filename = 'img/uploads/'+records[3])}}" class="file_image" alt=""></tr></th>
+                  </div>
+                </table>
+
+            </div>  
+          </div>
+  </div>
+  </div>
+</div>
+<form method="post" enctype="multipart/form-data">
+{{ form.csrf_token }}
+<div class="content-section">
+  <div class="center">
+      <thead class ="question_col" >
+          <th class="oof" scope="col">{{ wtf.form_field(form.Answers)}}</th>
+          <th class="oof" scope="col">{{ wtf.form_field(form.submit)}}</th>
+      </thead>
+  </div>
+</div>
+</form>
+{% endblock %}

@@ -3,34 +3,48 @@
 {% extends "base.html" %}
 {% block title %}Browse{% endblock %}
 {% block body %}
-<div class="content-section">
-  <div class="center">
-    <h1>Quiz:</h1>
-    <script src="static\script.js"></script>
-    <div class="container">
-    {% for record in records %}
-        {% for item in record['questions'] %}
-          <div class="row">
-            <div class="col-sm">
-              <tr><img src="{{ url_for('static', filename = 'img/uploads/'+item['file'])}}" class="file_image" alt=""></tr>
-              <th></th>
-            </div>
-            <div class="col-sm">
-              <table class="data-table">
-                  <th></th>
-                  <tr><td>Round: {{item['round']}}</td></tr>
-                  <tr><td>Question: {{item['question']}}</td></tr>
-                  <tr><td>Additional Info: {{item['additional_info']}}</td></tr>
-                  <tr><td>Points Worth: {{item['points_worth']}}</td></tr>
-                  <tr><th>Correct Answer: {{item['correct_answer']}}</td></tr>
-                </table>
-            </div>
-          </div>
-        {% endfor %}
-    {% endfor %}
-  </div>
-  </div>
-</div>
+<head>
+  </head>
+  <body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+    $(document).ready(function(){
+    var socket = io();
 
+    socket.on('connect', function() {
+                socket.emit('resp', {data: 'I\'m connected, Mr server!'});
+                socket.emit('user', {data:'{{ session["username"] }}'});
+                console.log('im connected.');
+            });
 
+    socket.on('my_response', function(msg) {
+        console.log(msg);
+      });
+    });
+
+  </script>
+  </body>
+  <!--<script type="text/javascript" charset="utf-8">
+    var socket = io();
+    socket.on('connect', function() {
+        socket.emit('message', {data:'{{ session["username"] }}'});
+    });
+</script> -->
+  <div class="content-section">
+    <div class="center">
+      <h1>Start Quiz</h1>
+      <h2>Users: <span id="users"> </span></h2>
+      <form method="post" enctype="multipart/form-data">
+      {{ form.csrf_token }}
+      <div class="content-section">
+        <div class="center">
+            <thead class ="question_col" >
+                <th class="oof" scope="col">{{ wtf.form_field(form.submit)}}</th>
+            </thead>
+        </div>
+      </div>
+      </form>
+    </div>
+  </div>
 {% endblock %}

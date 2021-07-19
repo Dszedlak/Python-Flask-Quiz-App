@@ -16,6 +16,7 @@ class DevelopmentConfig(Config):
     development=True
     DEBUG = True
     SQLALCHEMY_ECHO = True
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 class ProductionConfig(Config):

@@ -1,8 +1,12 @@
 from enum import auto
+from re import S
 import sqlite3, os, hashlib
 from flask import Flask, jsonify, render_template, request, g, flash, session, redirect, url_for
+from flask.globals import current_app
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
+from jinja2.utils import select_autoescape
+from sqlalchemy.sql.schema import ForeignKey, PrimaryKeyConstraint
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy import create_engine
@@ -71,21 +75,82 @@ class Question(db.Model):
     file = db.Column(db.String(250))
     points_worth = db.Column(db.Integer())
     correct_answer = db.Column(db.String(250))
+    question_type = db.Column(db.Integer())
+    question_options = db.Column(db.String(1000))
 
-def add_questions(question_json, img_ref):
+    def __repr__(self):
+        return '<qid {}>'.format(self.qid)   
 
+class Answer(db.Model):
+    __tablename__ = 'answer'
+    answer_id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer())
+    user_id = db.Column(db.Integer())
+    answer = db.Column(db.String(1000))
+
+class Game(db.Model):
+    __tablename__ = 'game'
+    game_id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(5000))
+    game_state = db.Column(db.Integer())
+    is_present = db.Column(db.Integer())
+    is_ready = db.Column(db.Integer())
+
+
+def load_game_users():
+    all=[]
+    choices = db.session.query(Question.round).all()
+    for choice in choices:
+        all.append(choice+choice)
+    return all
+
+def insert_game_user(data):
+    game_lst = json.loads(data)
+    game = Game(username=["username"], is_present=["is_present"])
+    db.session.add(game)
+    db.session.commit()
+
+def insert_question(question_json, img_ref):
     question_lst = json.loads(question_json) 
-    with engine.connect() as connection:
-        c = connection.execute("""INSERT INTO quiz(round, question, additional_info, file, points_worth, correct_answer) VALUES(?,?,?,?,?,?)""", question_lst["round"], question_lst["question"], question_lst["additional_info"], img_ref, question_lst["points_worth"], question_lst["correct_answer"])
-        
+    question = Question(round=question_lst["round"], question=question_lst['question'],additional_info=question_lst["additional_info"], file=img_ref, points_worth=question_lst["points_worth"], correct_answer=question_lst["correct_answer"], question_type=question_lst['question_type'], question_options=question_lst["question_options"])
+    db.session.add(question)
+    db.session.commit()
 
-def load_questions():
-    with engine.connect() as connection:
-        c = connection.execute("""SELECT * FROM quiz""")
-        questions = [{'questions':[dict(round=row[1], question=row[2], additional_info=row[3],file=row[4], points_worth=row[5], correct_answer=row[6]) for row in c.fetchall()]}]
-        print(questions)
+def load_choices():
+    all=[]
+    choices = db.session.query(Question.round).all()
+    for choice in choices:
+        all.append(choice+choice)
+
+    
+    remove_duplicates = list(dict.fromkeys(all))
+    print(remove_duplicates)
+    print(all)
+    return remove_duplicates
+
+def load_questions(question_num):
+    question_query = db.session.query(Question.round, Question.question, Question.additional_info, Question.file, Question.points_worth, Question.correct_answer, Question.question_type, Question.question_options).filter_by(qid=question_num).first()
+    print(question_query)
+    return question_query
+
+
+# def load_questions():
+#     with engine.connect() as connection:
+#         c = connection.execute("""SELECT * FROM quiz""")
+#         questions = [{'questions':[dict(round=row[1], question=row[2], additional_info=row[3],file=row[4], points_worth=row[5], correct_answer=row[6]) for row in c.fetchall()]}]
+#         print(questions)
         
-        return questions
+#         return questions
+
+def load_scores():
+    with engine.connect() as connection:
+        c = connection.execute("""SELECT * FROM users ORDER BY quizes_won DESC""")
+        scores = [{'users':[dict(username=row[1], score=row[5]) for row in c.fetchall()]}]
+        
+    print('____________')
+    print(scores)
+    print('____________')
+    return scores
 
 # def search_questions(term):
 #     with engine.connect() as connection:
@@ -94,9 +159,7 @@ def load_questions():
 #         c = connection.execute("""INSERT INTO v_quiz SELECT * FROM quiz""")
 #         d = connection.execute(""" SELECT * FROM v_quiz WHERE v_quiz MATCH '%s' """%term)
 #         a = connection.execute(""" SELECT * FROM v_quiz""")
-
 #         music = [{'questions':[dict(artist=row[1], album_name=row[2], album_cover=row[3],label=row[4], format=row[5], country=row[6], year_released=row[7], genre=row[8], style=row[9], user_id_ref=row[10]) for row in d.fetchall()]}]
-
 #         return music
 
 def login_required(f):

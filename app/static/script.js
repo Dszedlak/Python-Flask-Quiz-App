@@ -1,12 +1,10 @@
-if (document.readyState == 'loading') {
-	document.addEventListener('DOMContentLoaded', ready)
-} else {
-	ready()
-}
+const sio = io()
 
-function ready() {
-	var query = new URL(window.location).searchParams.get('search')
-	document.getElementById('search').value = query
-	document.getElementById('query-output').innerHTML =  'You searched: ' + query.trim()
-}
+sio.on('connect', () => {
+    console.log('connected');
+    sio.emit('sum', {numbers: [1,2]} );
+}) 
 
+sio.on('disconnect', () => {
+    console.log('disconnected');
+})

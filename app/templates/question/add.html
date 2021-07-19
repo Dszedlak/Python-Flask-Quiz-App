@@ -4,11 +4,52 @@
 {% extends "base.html" %}
 {% block title %}Add Record{% endblock %}
 {% block body %}
+<script>
+  function show() {
+  var x = document.getElementById("insert_options");
+  if (x.style.display === "block") {
+    x.style.display = "none";
+
+  } else {
+    x.style.display = "block";
+  }
+}
+</script>
 <div class="content-section">
-  <div class="center">
-    <h1>Add A Question</h1>
-    <br/>
-    {{ wtf.quick_form(form) }}
+<form method="post" enctype="multipart/form-data">
+  {{ form.csrf_token }}
+
+  <div class="center" >
+    <h1>Add A Question {{ wtf.form_field(form.submit)}}</h1>
+    <table class="table-dark">
+      <thead class ="question_col" >
+          <th class="oof" scope="col">{{ wtf.form_field(form.file)}}</th>
+      </thead>
+    <br>
+    <table class="table-dark" style="width: 100%">
+      <thead class ="question_col" >
+          <th class="oof" scope="col">{{ wtf.form_field(form.round_choice)}}</th>
+          <th class="oof" scope="col" style="padding-left: 23px;">{{ wtf.form_field(form.round)}}</th>
+          <th class="oof" scope="col" style="padding-left: 23px;">{{ wtf.form_field(form.question_type)}}</th>
+          <th class="oof" scope="col" style="padding-left: 23px;">{{ wtf.form_field(form.points_worth)}}</th>
+      </thead>
+    </table>
+      <thead class ="question_col" >
+        <th class="oof" scope="col">{{ wtf.form_field(form.question)}}</th>
+        <th class="oof" scope="col" style="padding-left: 0px;">{{ wtf.form_field(form.additional_info)}}</th>
+        <th class="oof" scope="col">{{ wtf.form_field(form.correct_answer)}}</th>
+      </thead>
+      <div id="insert_options" name ="insert_options" class="insert_options">
+        <thead class ="question_col" >
+          <th class="oof" scope="col">{{ wtf.form_field(form.add_choice_1)}}</th>
+          <th class="oof" scope="col" style="padding-left: 0px;">{{ wtf.form_field(form.add_choice_2)}}</th>
+          <th class="oof" scope="col">{{ wtf.form_field(form.add_choice_3)}}</th>
+          <th class="oof" scope="col">{{ wtf.form_field(form.add_choice_4)}}</th>
+          <th class="oof" scope="col">{{ wtf.form_field(form.add_choice_5)}}</th>
+        </thead>     
+      </div>
+    </form>
   </div>
 </div>
+
 {% endblock %}

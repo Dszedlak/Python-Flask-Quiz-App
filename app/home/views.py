@@ -1,9 +1,10 @@
 # app/home/views.py
 
 from flask import render_template
-
+from flask_login import current_user
+import socketio
+from ..models import load_scores
 from . import home
-
 
 @home.route('/')
 def homepage():
@@ -12,10 +13,9 @@ def homepage():
     """
     return render_template('home/index.html', title="Welcome")
 
-
 @home.route('/dashboard')
 def dashboard():
-    """
-    Render the dashboard template on the /dashboard route
-    """
-    return render_template('home/dashboard.html', title="Dashboard")
+    
+    scores = load_scores()
+
+    return render_template('home/dashboard.html', scores=scores, title="Dashboard")

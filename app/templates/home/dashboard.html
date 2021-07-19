@@ -8,13 +8,36 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="intro-message">
-                    <h1>The Dashboard</h1>
-                    <h3>Welcome {{session['username']}} To 21st Century Quizmen!</h3>
-                    <hr class="intro-divider">
+                    <h1>The Leaderboards</h1>
+                    <h3>Welcome {{session['username']}}. These are the current standings:</h3>
+                    <hr class="intro-divider"></hr>
+                                <table class="table table-dark table-sm">
+                                    <thead class ="thead-light">
+                                        <th class="oof" scope="col">User</th>
+                                        <th class="oof" scope="col">Quizes Won</th>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in scores %}
+                                            {% for item in record['users'] %}
+                                                <tr>
+                                                    <td scope="row">{{item['username']}}</td>
+                                                    <td>{{item['score']}}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </tbody>
+                                  </table>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+    var socket = io();
+    socket.on('connect', function() {
+        socket.emit('my event', {data: 'I\'m connected!'});
+    });
+</script>
 {% endblock %}
