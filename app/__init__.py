@@ -4,21 +4,19 @@ from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, current_user
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.exceptions import abort
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 
 # local imports
 from config import app_config
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from functools import wraps
-import flask_uploads
-
 db = SQLAlchemy()
 login_manager = LoginManager()
+wss = SocketIO(cors_allowed_origins="*")
+app = Flask(__name__, instance_relative_config=True)
 
 def create_app(config_name):
-    app = Flask(__name__, instance_relative_config=True)
     app.config['SECRET_KEY']='p9Bv<3Eid9%$i01'
     app.config.from_object(app_config['development'])
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
@@ -30,8 +28,6 @@ def create_app(config_name):
     login_manager.login_view = "auth.login"
     migrate = Migrate(app, db)
 
-    SocketIO(app, logger=True, engineio_logger=True)
-
     from app import models
 
     with app.app_context():
@@ -41,7 +37,6 @@ def create_app(config_name):
     admin = Admin(app, index_view=MyAdminIndexView())
     admin.add_view(Controller(User, db.session))
     admin.add_view(Controller(Question, db.session))
-
 
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)
@@ -66,4 +61,3 @@ class Controller(ModelView):
 class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):
         return current_user.is_admin == 1
-     

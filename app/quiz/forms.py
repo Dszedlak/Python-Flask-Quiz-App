@@ -13,15 +13,11 @@ from wtforms.widgets.core import HiddenInput
 from flask_socketio import SocketIO
 import json
 
-app = Flask(__name__)
-async_mode = None
-socketio = SocketIO(app, logger=True, engineio_logger=True, async_mode = None)
-
 class ViewQuestion(FlaskForm):
     """
     Form for users to answer input field questions
     """
-    Answer = StringField('Your Answer', validators=[DataRequired()])
+    Answers = StringField('Your Answer', validators=[DataRequired()])
     submit = SubmitField('Submit Answer')
 
 class MultipleChoice(FlaskForm):

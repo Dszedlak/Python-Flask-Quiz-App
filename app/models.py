@@ -96,18 +96,22 @@ class Game(db.Model):
     is_present = db.Column(db.Integer())
     is_ready = db.Column(db.Integer())
 
-
-def load_game_users():
-    all=[]
-    choices = db.session.query(Question.round).all()
-    for choice in choices:
-        all.append(choice+choice)
+def load_game_users(data):
+    user = db.session.query(Game.is_present).filter_by(username=data).first()
+    for choice in user:
+        all = choice
+    print(all)
     return all
 
-def insert_game_user(data):
+def insert_game_user(data, num):
+    user = db.session.query(Game).filter_by(username=data).first()
+    user.is_present = num
+    db.session.commit()
+
+def game_user_is_ready(data):
     game_lst = json.loads(data)
-    game = Game(username=["username"], is_present=["is_present"])
-    db.session.add(game)
+    user = db.session.query(Game).filter_by(username=game_lst['username']).first()
+    user.is_ready= game_lst['is_ready']
     db.session.commit()
 
 def insert_question(question_json, img_ref):

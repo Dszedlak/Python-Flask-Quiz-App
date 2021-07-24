@@ -8,7 +8,7 @@ import json
 from . import auth
 from .forms import LoginForm, RegistrationForm
 from .. import db
-from ..models import User, clear_session, quizadminhash, adminHash
+from ..models import User, clear_session, quizadminhash, adminHash, Game
 
 
 @auth.route('/register', methods=['GET', 'POST'])
@@ -27,10 +27,19 @@ def register():
                             quizes_hosted=0
                             )
 
+
         # add employee to the database
         db.session.add(user)
         db.session.commit()
         
+        game_user = Game(username=form.username.data,
+                            game_state=0,
+                            is_present=0, 
+                            is_ready=0
+                            )
+            # add employee to the database
+        db.session.add(game_user)
+        db.session.commit()
         flash('You have successfully registered! You may now login.')
 
         # redirect to the login page
@@ -61,6 +70,7 @@ def login():
             login_user(user)
             #print(user)
             #print(session)
+            
 
             session['logged_in'] = True
             session['username'] = (str(user))

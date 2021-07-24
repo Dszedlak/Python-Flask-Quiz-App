@@ -1,42 +1,47 @@
 # app/auth/views.py
-from sqlalchemy.sql.base import Executable
-from threading import Lock
 from werkzeug.utils import secure_filename
-from flask import flash, redirect, render_template, url_for, request
-from flask_socketio import SocketIO, emit, join_room, leave_room, send
-from flask_login import login_required, login_manager, current_user
+from flask import redirect, render_template, url_for, request
+from flask_login import login_required, current_user
+
 from . import quiz
-import requests
 from .forms import AddQuestionForm, ViewQuestion, MultipleChoice, StartQuiz
 import os
 import os.path
 
-from .forms import app, socketio, async_mode
-from ..models import session, login_required, is_quiz_admin, insert_question, load_questions, load_choices, insert_game_user, load_game_users
+from ..models import login_required, is_quiz_admin, insert_question, load_questions, load_choices, insert_game_user, load_game_users
 import json
+from app import wss, app
 
-app.config["IMAGE_UPLOADS"] = "app/static/img/uploads"
+@wss.on('resp')
+def response(data):
+    data = load_game_users(str(current_user))
+    if data == 1:
+         wss.emit('my_response', {'data': data}, broadcast=True)
+    else:
+        insert_game_user(str(current_user), 1)
+        data = load_game_users(str(current_user))
+        wss.emit('my_response', {'data': data}, broadcast=True)
 
-thread = None
-thread_lock = Lock()
+@wss.on('resp_disc')
+def disconn(data):
+    insert_game_user(str(current_user), 0)
+    data = "User is not present."
+    print("_________________")
+    print("YEB MY WEB!")
+    print(data)
+    print("_________________")
+    wss.emit('my_response',{'data': data}, broadcast=True)
 
-@socketio.on('quiz')
-def connect(data):
-    emit('my_response', {'message': data})
-
-@socketio.event
-def user(data):
-    emit('my_response', {'message': data})
-
-@socketio.on('disconnect')
-def test_disconnect():
-    print('Client disconnected')
+@wss.on('user')
+def user_response(data):
     
+    wss.emit('my_response', {'data': data}, broadcast=True)
+
 @quiz.route('/quiz', methods=['GET','POST'])
 @login_required
 def view_quiz():
     form = StartQuiz()
-    return render_template('question/view_quiz.html', form=form, title='Start Quiz', async_mode=socketio.async_mode)
+    return render_template('question/view_quiz.html', form=form, title='Start Quiz', async_mode=wss.async_mode)
 
 @quiz.route('/quiz/question_<int:qid>', methods=['GET','POST'])
 @login_required
