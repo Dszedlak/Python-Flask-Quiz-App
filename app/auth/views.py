@@ -1,14 +1,14 @@
 # app/auth/views.py
 
 from operator import is_
-from flask import flash, redirect, render_template, url_for
+from flask import flash, redirect, render_template, url_for, request
 from flask.globals import session
 from flask_login import login_required, login_user, logout_user
 import json
 from . import auth
 from .forms import LoginForm, RegistrationForm
 from .. import db
-from ..models import User, clear_session, quizadminhash, adminHash, Game
+from ..models import User, clear_session, quizadminhash, adminHash
 
 
 @auth.route('/register', methods=['GET', 'POST'])
@@ -24,21 +24,15 @@ def register():
                             is_quiz_admin=0,
                             is_admin=0, 
                             quizes_won=0,
-                            quizes_hosted=0
+                            quizes_hosted=0,
+                            game_state=0,
+                            is_present=0, 
+                            is_ready=0
                             )
 
 
         # add employee to the database
         db.session.add(user)
-        db.session.commit()
-        
-        game_user = Game(username=form.username.data,
-                            game_state=0,
-                            is_present=0, 
-                            is_ready=0
-                            )
-            # add employee to the database
-        db.session.add(game_user)
         db.session.commit()
         flash('You have successfully registered! You may now login.')
 

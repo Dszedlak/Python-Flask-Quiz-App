@@ -31,11 +31,15 @@ class StartQuiz(FlaskForm):
     """
     Form for users to view the quiz
     """
-    submit = SubmitField('Ready')
+    ready = SubmitField('Ready')
+    unready = SubmitField('Unready')
+
+class adminStartQuiz(FlaskForm):
+    start = SubmitField('Start Quiz')
 
 class AddQuestionForm(FlaskForm):
 
-    round = StringField('Create New Round', render_kw={"placeholder":"Create a new round. Leave this empty if you wish to select an existing round."})
+    round = StringField('Create New Round', render_kw={"placeholder":"Leave empty to select existing round."})
     round_choice = SelectField('Select Round',choices=[])
     question_type = SelectField('Select question type',choices=[('1', 'User Input Based'),('2','Multiple Choice')], render_kw={"onchange":"show()"})
     question = StringField('Question', validators=[DataRequired()])

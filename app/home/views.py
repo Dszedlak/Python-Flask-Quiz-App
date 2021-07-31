@@ -1,8 +1,6 @@
 # app/home/views.py
 
 from flask import render_template
-from flask_login import current_user
-import socketio
 from ..models import load_scores
 from . import home
 

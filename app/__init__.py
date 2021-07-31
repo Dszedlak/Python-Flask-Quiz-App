@@ -13,7 +13,7 @@ from flask_admin.contrib.sqla import ModelView
 from functools import wraps
 db = SQLAlchemy()
 login_manager = LoginManager()
-wss = SocketIO(cors_allowed_origins="*")
+wss = SocketIO()
 app = Flask(__name__, instance_relative_config=True)
 
 def create_app(config_name):

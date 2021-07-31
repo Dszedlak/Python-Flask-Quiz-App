@@ -1,14 +1,9 @@
-from enum import auto
 from re import S
-import sqlite3, os, hashlib
-from flask import Flask, jsonify, render_template, request, g, flash, session, redirect, url_for
+from flask import Flask, request, g, flash, session, redirect, url_for
 from flask.globals import current_app
-from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
-from jinja2.utils import select_autoescape
-from sqlalchemy.sql.schema import ForeignKey, PrimaryKeyConstraint
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
+from flask_login import UserMixin, current_user
 from sqlalchemy import create_engine
 
 from app import db, login_manager
@@ -36,6 +31,9 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Integer)
     quizes_won = db.Column(db.Integer)
     quizes_hosted = db.Column(db.Integer)
+    game_state = db.Column(db.Integer())
+    is_present = db.Column(db.Integer())
+    is_ready = db.Column(db.Integer())
 
     @property
     def password(self):
@@ -88,31 +86,60 @@ class Answer(db.Model):
     user_id = db.Column(db.Integer())
     answer = db.Column(db.String(1000))
 
-class Game(db.Model):
-    __tablename__ = 'game'
-    game_id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(5000))
-    game_state = db.Column(db.Integer())
-    is_present = db.Column(db.Integer())
-    is_ready = db.Column(db.Integer())
-
-def load_game_users(data):
-    user = db.session.query(Game.is_present).filter_by(username=data).first()
+#################
+#Models for handling user connectivity
+def load_present_user(data):
+    user = db.session.query(User.is_present).filter_by(username=data).first()
     for choice in user:
         all = choice
     print(all)
     return all
 
-def insert_game_user(data, num):
-    user = db.session.query(Game).filter_by(username=data).first()
+def change_user_conn_status(data, num):
+    user = db.session.query(User).filter_by(username=data).first()
     user.is_present = num
     db.session.commit()
 
-def game_user_is_ready(data):
-    game_lst = json.loads(data)
-    user = db.session.query(Game).filter_by(username=game_lst['username']).first()
-    user.is_ready= game_lst['is_ready']
+def load_all_present_users():
+    users = []
+    user = db.session.query(User.username).filter_by(is_present=1).all()
+
+    for u in user:
+        users.append(u)
+    print(users)
+    return users
+
+############################
+##Models for handling user ready status
+
+def update_user_conn_status(data, num):
+    user = db.session.query(User).filter_by(username=data).first()
+    user.is_ready = num
     db.session.commit()
+
+def load_all_ready_users():
+    users = []
+    user = db.session.query(User.username).filter_by(is_ready=1).all()
+
+    for u in user:
+        users.append(u)
+    print(users)
+    return users
+
+def update_user_game_status():
+    users = load_all_ready_users()
+    for u in users:
+        user = db.session.query(User).filter_by(username=u[0]).first()
+        user.game_state = 1
+        db.session.commit()
+
+def get_first_question_id():
+    list_id = db.session.query(Question.qid).first()
+    id = list_id[0]
+    return id
+
+############################
+##Models for handling adding of questions
 
 def insert_question(question_json, img_ref):
     question_lst = json.loads(question_json) 
@@ -125,8 +152,7 @@ def load_choices():
     choices = db.session.query(Question.round).all()
     for choice in choices:
         all.append(choice+choice)
-
-    
+  
     remove_duplicates = list(dict.fromkeys(all))
     print(remove_duplicates)
     print(all)

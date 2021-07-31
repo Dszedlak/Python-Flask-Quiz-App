@@ -1,55 +1,104 @@
 # app/auth/views.py
+import socketio
 from werkzeug.utils import secure_filename
-from flask import redirect, render_template, url_for, request
+from flask import redirect, render_template, url_for, request, session
 from flask_login import login_required, current_user
 
 from . import quiz
-from .forms import AddQuestionForm, ViewQuestion, MultipleChoice, StartQuiz
+from .forms import AddQuestionForm, ViewQuestion, MultipleChoice, StartQuiz, adminStartQuiz
 import os
 import os.path
-
-from ..models import login_required, is_quiz_admin, insert_question, load_questions, load_choices, insert_game_user, load_game_users
+from ..models import User, get_first_question_id, load_all_present_users, load_all_ready_users, login_required, is_quiz_admin, insert_question, load_questions, load_choices, change_user_conn_status, load_present_user, update_user_conn_status, quizadminhash, update_user_game_status
 import json
 from app import wss, app
 
-@wss.on('resp')
-def response(data):
-    data = load_game_users(str(current_user))
-    if data == 1:
-         wss.emit('my_response', {'data': data}, broadcast=True)
-    else:
-        insert_game_user(str(current_user), 1)
-        data = load_game_users(str(current_user))
-        wss.emit('my_response', {'data': data}, broadcast=True)
+app.config["IMAGE_UPLOADS"] = "app/static/img/uploads"
 
-@wss.on('resp_disc')
-def disconn(data):
-    insert_game_user(str(current_user), 0)
-    data = "User is not present."
+@wss.on('connect', namespace='/Play')
+def play():
+    print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOFMYNIG")
+    user = current_user.username
+    wss.emit('new_response', {'data': user}, namespace='/Play', broadcast=True)
+
+@wss.on('disconnect', namespace='/Play')
+def test():
+    print("NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+    user = current_user.username
+    wss.emit('new_response', {'data': user}, namespace='/Play', broadcast=True)
+
+@wss.on('connect')
+def connect():
     print("_________________")
-    print("YEB MY WEB!")
-    print(data)
+    print(current_user.username)
     print("_________________")
-    wss.emit('my_response',{'data': data}, broadcast=True)
+    user = current_user.username
+    is_present = load_present_user(user)
+
+    #check if admin via admin/quizadmin hash
+    if is_present == 1:
+         wss.emit('my_response', {'data': user}, broadcast=True)
+    else:
+        change_user_conn_status(user, 1)
+        wss.emit('my_response', {'data': user}, broadcast=True)
+
+@wss.on('disconnect')
+def disconnect():
+    print("_________________")
+    change_user_conn_status(current_user.username, 0)
+    print("User NO LONGER WEARING SOCKS!")
+    print("_________________")
+    wss.emit('my_response',{'data': 'cock!'}, broadcast=True)
 
 @wss.on('user')
-def user_response(data):
-    
-    wss.emit('my_response', {'data': data}, broadcast=True)
+def load_users():
+    present_users = load_all_present_users()
+    ready_users = load_all_ready_users()
+
+    data = {
+        'present' : present_users,
+        'ready' : ready_users
+    }
+    print(data)
+    wss.emit('my_pong', {'data': data}, broadcast=True)
+
+@wss.on('submit')
+def submit(data):
+    print(data)
+    user = current_user.username 
+    update_user_conn_status(user, 1)
+
+@wss.on('unsubmit')
+def unsubmit(data):
+    print(data)
+    user = current_user.username
+    update_user_conn_status(user,0)
 
 @quiz.route('/quiz', methods=['GET','POST'])
 @login_required
 def view_quiz():
-    form = StartQuiz()
-    return render_template('question/view_quiz.html', form=form, title='Start Quiz', async_mode=wss.async_mode)
 
-@quiz.route('/quiz/question_<int:qid>', methods=['GET','POST'])
+    user = User.query.filter_by(username=current_user.username).first()
+    form = StartQuiz()
+
+    if user.is_quiz_admin:
+        form = adminStartQuiz()
+
+    if form.validate_on_submit():
+        update_user_game_status()
+        return redirect(url_for('quiz.question'))
+    return render_template('question/view_quiz.html', form=form, title='Start Quiz', async_mode=wss.async_mode)
+    
+
+@quiz.route('/quiz/play', methods=['GET','POST'])
 @login_required
-def question(qid):
+def question():
     """
-    Handle requests to the /view question page
+    use websockets to load question on the same page
+    timer runs out (example) and the server sends the question data back
     """
-    question = load_questions(qid)    
+    qid = get_first_question_id()
+    question = load_questions(int(qid))    
+
     while True:
         try:
             if question[6] == 2:
@@ -67,14 +116,16 @@ def question(qid):
     if form.validate_on_submit(): 
         data = form.round_choice.data,
 
-    return render_template('question/view_question.html', form=form, records=question, qid=qid, title='Question: {}'.format(qid))
+    return render_template('question/play.html', form=form, records=question, qid=qid, title='Question: {}'.format(qid))
 
 @quiz.route('/quiz/add', methods=['GET', 'POST'])
 @is_quiz_admin
 def add_question():
 
     form = AddQuestionForm()
-    form.round_choice.choices = load_choices()
+    list = load_choices()
+    list.append(('None','None'))
+    form.round_choice.choices = list
     
     if form.validate_on_submit(): 
         data = {
@@ -102,12 +153,14 @@ def add_question():
         path = 'app/static/img/uploads/%s' % (filename.filename)
 
         if not os.path.exists(path):
-            filename.save(os.path.join(app.config["IMAGE_UPLOADS"],secure_filename(filename.filename)))
-            insert_question(json_data,secure_filename(filename.filename))
+            with app.app_context():
+                filename.save(os.path.join(app.config["IMAGE_UPLOADS"],secure_filename(filename.filename)))
+                insert_question(json_data,secure_filename(filename.filename))
         else:
-            filename.filename = resolve_conflict(filename.filename)
-            filename.save(os.path.join(app.config["IMAGE_UPLOADS"], secure_filename(filename.filename)))
-            insert_question(json_data, secure_filename(filename.filename))
+            with app.app_context():
+                filename.filename = resolve_conflict(filename.filename)
+                filename.save(os.path.join(app.config["IMAGE_UPLOADS"], secure_filename(filename.filename)))
+                insert_question(json_data, secure_filename(filename.filename))
     
         return redirect(url_for('quiz.add_question'))
             
