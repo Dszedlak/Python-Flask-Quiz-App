@@ -126,12 +126,12 @@ def load_all_ready_users():
     print(users)
     return users
 
-def update_user_game_status():
+def update_user_game_status(num):
     users = load_all_ready_users()
     for u in users:
         user = db.session.query(User).filter_by(username=u[0]).first()
-        user.game_state = 1
-        db.session.commit()
+        user.game_state = num
+        db.session.commit()    
 
 def get_first_question_id():
     list_id = db.session.query(Question.qid).first()

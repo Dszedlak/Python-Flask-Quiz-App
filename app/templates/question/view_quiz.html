@@ -24,51 +24,49 @@
     try{
     var button = document.getElementById("ready")
     button.addEventListener('click', function(e){
-        socket.emit('submit', {'data': 'COCK AND BALLS DR.FREEMAN'});
+        console.log("User readied up.")
+        socket.emit('ready_user', {'data': 'User readied up.'});
     });
     }
     catch(error){
     /* Do nothing */
     }
+
     try{
       var button2 = document.getElementById("unready")
       button2.addEventListener('click', function(e){
-          socket.emit('unsubmit', {'data': 'COCK AND BALLS DR.FREEMAN'});
+        console.log("User no longer ready.")
+        socket.emit('unready_user', {'data': 'User no longer ready.'});
     });
     }
     catch(error){
     /* Do nothing */
     }
-
-    socket.on('ready_users', function(data){
-        console.log(data)
+    
+    try{
+      var button2 = document.getElementById("start")
+      button2.addEventListener('click', function(e){
+        socket.emit('quiz_redirect', {'data': 'EGGS DR.FREEMAN'});
+        socket.emit('change_game_state', {'data': 'EGGS DR.FREEMAN'});
+        console.log('START BUTTON PRESSED')
+    });
+    }
+    catch(error){
+    /* Do nothing */
+    }
+    socket.on('redirect', function (data) {
+      window.location = data.url;
     });
     
-    var ping_pong_times = [];
-    var start_time;
-    window.setInterval(function() {
-        start_time = (new Date).getTime();
-        socket.emit('user');
-    }, 1000);
-
-    socket.on('my_pong', function(data){
-        console.log(data)
+    socket.on('user_status', function(data){
         var users_present = data.data.present
         var users_ready = data.data.ready
         console.log(users_present)
         console.log(users_ready)
         
-        var latency = (new Date).getTime() - start_time;
-        ping_pong_times.push(latency);
-        ping_pong_times = ping_pong_times.slice(-30); // keep last 30 samples
-        var sum = 0;
-        
-        for (var i = 0; i < ping_pong_times.length; i++)
-            sum += ping_pong_times[i];
-
-        document.getElementById('ping-pong').innerHTML = "";
+        document.getElementById('connected_users').innerHTML = "";
         for (var i = 0; i < users_present.length; i++)
-            $('#ping-pong').append('<br>' + $('<div/>').text(' - ' + users_present[i]).html()); 
+            $('#connected_users').append('<br>' + $('<div/>').text(' - ' + users_present[i]).html()); 
 
         document.getElementById('rdy_users').innerHTML = "";
         for (var i = 0; i < users_ready.length; i++)
@@ -82,12 +80,6 @@
 
   </script>
   </body>
-  <!--<script type="text/javascript" charset="utf-8">
-    var socket = io();
-    socket.on('connect', function() {
-        socket.emit('message', {data:'{{ session["username"] }}'});
-    });
-</script> -->
   <div class="content-section">
     <div class="center">
       {{ form.csrf_token }}
@@ -104,7 +96,7 @@
       {% endif %}
       <div class="content-section">
         <h3>Users Connected:</h3>
-        <div id="ping-pong"></div>
+        <div id="connected_users"></div>
         <h3>Users Ready:</h3>
         <div id="rdy_users"></div>
       </div>

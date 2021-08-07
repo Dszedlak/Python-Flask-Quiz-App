@@ -12,20 +12,6 @@ from flask import Flask, jsonify, render_template, request, g
 from wtforms.widgets.core import HiddenInput
 from flask_socketio import SocketIO
 import json
-
-class ViewQuestion(FlaskForm):
-    """
-    Form for users to answer input field questions
-    """
-    Answers = StringField('Your Answer', validators=[DataRequired()])
-    submit = SubmitField('Submit Answer')
-
-class MultipleChoice(FlaskForm):
-    """
-    Form for users to answer multiple choice questions
-    """
-    Answers = RadioField('Select question type',choices=[], validators=[DataRequired()])
-    submit = SubmitField('Submit Answer')
     
 class StartQuiz(FlaskForm):
     """

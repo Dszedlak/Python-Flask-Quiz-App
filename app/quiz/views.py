@@ -1,11 +1,12 @@
 # app/auth/views.py
-import socketio
+from inspect import classify_class_attrs
+from flask_socketio import join_room, leave_room
 from werkzeug.utils import secure_filename
 from flask import redirect, render_template, url_for, request, session
 from flask_login import login_required, current_user
 
 from . import quiz
-from .forms import AddQuestionForm, ViewQuestion, MultipleChoice, StartQuiz, adminStartQuiz
+from .forms import AddQuestionForm, StartQuiz, adminStartQuiz
 import os
 import os.path
 from ..models import User, get_first_question_id, load_all_present_users, load_all_ready_users, login_required, is_quiz_admin, insert_question, load_questions, load_choices, change_user_conn_status, load_present_user, update_user_conn_status, quizadminhash, update_user_game_status
@@ -13,43 +14,102 @@ import json
 from app import wss, app
 
 app.config["IMAGE_UPLOADS"] = "app/static/img/uploads"
+clients = []
 
 @wss.on('connect', namespace='/Play')
-def play():
-    print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOFMYNIG")
+def oog():
     user = current_user.username
     wss.emit('new_response', {'data': user}, namespace='/Play', broadcast=True)
 
 @wss.on('disconnect', namespace='/Play')
 def test():
-    print("NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
     user = current_user.username
     wss.emit('new_response', {'data': user}, namespace='/Play', broadcast=True)
 
+@wss.on('quiz_redirect')
+def start(data):
+    print ('USER MESSAGE {}'.format(data))
+    wss.emit('redirect', {'url': url_for('quiz.play')}, room=clients)
+
+@wss.on('change_game_state')
+def game_start():
+    update_user_game_status(1)
+
 @wss.on('connect')
 def connect():
-    print("_________________")
-    print(current_user.username)
-    print("_________________")
     user = current_user.username
     is_present = load_present_user(user)
+    isadminuser = User.query.filter_by(username=current_user.username).first()
 
-    #check if admin via admin/quizadmin hash
+    print("VERY LARGE COCK MY BROTHER!")
+
+    if isadminuser.is_quiz_admin:
+        clients.append(request.sid) 
+
+    #check if admin via is admin
     if is_present == 1:
-         wss.emit('my_response', {'data': user}, broadcast=True)
+        data = load_users()
+        wss.emit('user_status', {'data': data}, broadcast=True)
     else:
         change_user_conn_status(user, 1)
-        wss.emit('my_response', {'data': user}, broadcast=True)
+        data = load_users()
+        wss.emit('user_status', {'data': data}, broadcast=True)
 
 @wss.on('disconnect')
 def disconnect():
     print("_________________")
+    user = current_user.username
     change_user_conn_status(current_user.username, 0)
     print("User NO LONGER WEARING SOCKS!")
     print("_________________")
-    wss.emit('my_response',{'data': 'cock!'}, broadcast=True)
+    update_user_conn_status(user,0)
 
-@wss.on('user')
+    data = load_users()
+    wss.emit('user_status',{'data': data}, broadcast=True)
+
+@wss.on('ready_user')
+def submit(data):
+    print(data)
+    print("READY")
+    user = current_user.username 
+    update_user_conn_status(user, 1)
+    
+    clients.append(request.sid)
+    data = load_users()
+    
+    wss.emit('user_status', {'data': data}, broadcast=True)
+
+@wss.on('unready_user')
+def unsubmit(data):
+    print(data)
+    print("UNREADY")
+    
+    user = current_user.username 
+    update_user_conn_status(user, 0)
+    data = load_users()
+    clients.remove(request.sid)
+
+    wss.emit('user_status', {'data': data}, broadcast=True)
+
+    #All users are in 1 room, have 2 rooms. When someone readys up, they join the ready room
+    #But do not leave the waiting room. Broadcast all changes that happen to users of the waiting room, as everyone is in that room anyway
+
+@wss.on('load_question_data', namespace='/Play')
+def testytest(question_num):
+    question = load_questions(int(question_num["data"]))
+    #recieve question num from client - starting num is 1.
+    question_data = {
+        'round' : question[0],
+        'question' : question[1],
+        'additional_info':question[2],
+        'file':question[3],
+        'points_worth':question[4],
+        'question_type':question[6],
+        'question_options':question[7],
+    }
+    #send question data as json object
+    wss.emit('question', {'data': question_data}, namespace='/Play', broadcast=True)
+    
 def load_users():
     present_users = load_all_present_users()
     ready_users = load_all_ready_users()
@@ -58,21 +118,8 @@ def load_users():
         'present' : present_users,
         'ready' : ready_users
     }
-    print(data)
-    wss.emit('my_pong', {'data': data}, broadcast=True)
-
-@wss.on('submit')
-def submit(data):
-    print(data)
-    user = current_user.username 
-    update_user_conn_status(user, 1)
-
-@wss.on('unsubmit')
-def unsubmit(data):
-    print(data)
-    user = current_user.username
-    update_user_conn_status(user,0)
-
+    return data
+ 
 @quiz.route('/quiz', methods=['GET','POST'])
 @login_required
 def view_quiz():
@@ -84,39 +131,20 @@ def view_quiz():
         form = adminStartQuiz()
 
     if form.validate_on_submit():
-        update_user_game_status()
-        return redirect(url_for('quiz.question'))
-    return render_template('question/view_quiz.html', form=form, title='Start Quiz', async_mode=wss.async_mode)
-    
+        update_user_game_status(1)
+    return render_template('question/view_quiz.html', form=form, title='Start Quiz', async_mode=wss.async_mode)  
 
 @quiz.route('/quiz/play', methods=['GET','POST'])
 @login_required
-def question():
+def play():
     """
     use websockets to load question on the same page
     timer runs out (example) and the server sends the question data back
     """
-    qid = get_first_question_id()
-    question = load_questions(int(qid))    
-
-    while True:
-        try:
-            if question[6] == 2:
-                form = MultipleChoice()
-                choices = str(question[7]).split(', ')
-                form.Answers.choices = choices
-            elif question[6] == 1:
-                form = ViewQuestion()
-            break
-        except ValueError:
-            return 'Bad request!', 400
-        
+    load_questions(1)
     # load registration template
 
-    if form.validate_on_submit(): 
-        data = form.round_choice.data,
-
-    return render_template('question/play.html', form=form, records=question, qid=qid, title='Question: {}'.format(qid))
+    return render_template('question/play.html',title='Question: Playing...')
 
 @quiz.route('/quiz/add', methods=['GET', 'POST'])
 @is_quiz_admin

@@ -10,43 +10,78 @@
     $(document).ready(function(){
       var socket = io.connect('ws://127.0.0.1:5000/Play');
 
+      socket.on('connect', function(){
+        socket.emit('load_question_data', {'data': '2'});
+        //on connect, ask server for question data
+        //TO DO:
+        //  - create admin button to go to next question, which will automatically incrememt question id
+      })
+
       socket.on('new_response', function(msg) {
         console.log('EL BOONGER ROONGA', msg.data);
       });
+
+      socket.on('question', function(question_data) {
+        //recieve question data
+        var data = question_data.data
+
+        var img = document.createElement("img");
+        img.src = "/static/img/uploads/" + data["file"]
+        img.width = 350
+        img.height = 350
+        //for the sake of testing, this doesn't look nice here I know that, infact all of this JS should be in a static JS file
+        var src = document.getElementById("file");
+        src.appendChild(img);
+
+        document.getElementById('round_header').innerHTML = data["round"];
+        document.getElementById('question_header').innerHTML = data["question"];
+        document.getElementById('additional_info_header').innerHTML = data["additional_info"];
+        document.getElementById('points_worth_header').innerHTML = data["points_worth"];
+        
+        if (data["question_type"]==1)
+        {
+          var answer_header = document.createElement("input");
+          answer_header.type = "text";
+          answer_header.className = "answer_text_input";
+          var div_append = document.getElementById("answers");
+          div_append.appendChild(answer_header);
+        }
+        else
+        {
+          const tmp_arr = (data["question_options"]).split(',')
+ 
+          for (var value of tmp_arr)
+        {
+            $('#answers').append(
+                $('<br><input>').prop({
+                    type: 'radio',
+                    id: value,
+                    name: 'multiple_choice_answer',
+                    value: value
+                })
+            ).append(
+                $('<label>').prop({
+                    for: value
+                }).html(value)
+            )
+        }
+          
+        }
+
+      })
     });
   </script>
-
-<div class="content-section">
-  <div class="center">
-    <h1>Question: {{ qid }} | Round: {{records[0]}} </h1>
-    <div class="container">
-          <div class="row">
-            <div class="col-sm">
-              <table class="data-table">
-                  <th></th>
-                  <tr><td>Question: {{records[1]}}</td></tr>
-                  <tr><td>Additional Info: {{records[2]}}</td></tr>
-                  <tr><td>Points Worth: {{records[4]}}</td></tr>
-                  <tr><th>Correct Answer: {{records[5] }}</td></tr>
-                  <tr name = "question_type" value="{{records[6]}}"><th name = "question_type" value="{{records[6]}}">Question Type: {{ records[6] }}</th></tr>
-                  <tr><th><img src="{{ url_for('static', filename = 'img/uploads/'+records[3])}}" class="file_image" alt=""></tr></th>
-                  </div>
-                </table>
-
-            </div>  
-          </div>
+  <div class="content-section">
+    <div class="center">
+        <thead class ="question_col" >
+          <div id="file"></div>
+          <h2 id="round_header"></h1>
+          <h1 id="question_header"></h2>
+          <h3 id="additional_info_header"></h3>
+          <h4 id="points_worth_header"></h4>
+          <div id="answers"></div>
+        </thead>
+    </div>
   </div>
-  </div>
-</div>
-<form method="post" enctype="multipart/form-data">
-{{ form.csrf_token }}
-<div class="content-section">
-  <div class="center">
-      <thead class ="question_col" >
-          <th class="oof" scope="col">{{ wtf.form_field(form.Answers)}}</th>
-          <th class="oof" scope="col">{{ wtf.form_field(form.submit)}}</th>
-      </thead>
-  </div>
-</div>
 </form>
 {% endblock %}
