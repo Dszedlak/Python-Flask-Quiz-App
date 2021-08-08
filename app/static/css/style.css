@@ -155,3 +155,8 @@ search-form, .search-button {
 .insert_options{
     display: none;
 }
+
+.file{
+    width: 350px;
+    height: 350px;
+}

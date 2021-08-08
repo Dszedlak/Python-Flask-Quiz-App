@@ -25,14 +25,9 @@
         //recieve question data
         var data = question_data.data
 
-        var img = document.createElement("img");
-        img.src = "/static/img/uploads/" + data["file"]
-        img.width = 350
-        img.height = 350
-        //for the sake of testing, this doesn't look nice here I know that, infact all of this JS should be in a static JS file
-        var src = document.getElementById("file");
-        src.appendChild(img);
+        document.getElementById("file").src = "/static/img/uploads/" + data["file"]
 
+        //for the sake of testing, this doesn't look nice here I know that, infact all of this JS should be in a static JS file
         document.getElementById('round_header').innerHTML = data["round"];
         document.getElementById('question_header').innerHTML = data["question"];
         document.getElementById('additional_info_header').innerHTML = data["additional_info"];
@@ -40,6 +35,7 @@
         
         if (data["question_type"]==1)
         {
+          document.getElementById('answers').innerHTML = "";
           var answer_header = document.createElement("input");
           answer_header.type = "text";
           answer_header.className = "answer_text_input";
@@ -48,10 +44,11 @@
         }
         else
         {
+          document.getElementById('answers').innerHTML = "";
           const tmp_arr = (data["question_options"]).split(',')
  
           for (var value of tmp_arr)
-        {
+          {
             $('#answers').append(
                 $('<br><input>').prop({
                     type: 'radio',
@@ -64,7 +61,7 @@
                     for: value
                 }).html(value)
             )
-        }
+            }
           
         }
 
@@ -74,7 +71,7 @@
   <div class="content-section">
     <div class="center">
         <thead class ="question_col" >
-          <div id="file"></div>
+          <img class="file" id="file">
           <h2 id="round_header"></h1>
           <h1 id="question_header"></h2>
           <h3 id="additional_info_header"></h3>

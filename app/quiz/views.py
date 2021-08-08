@@ -19,6 +19,10 @@ clients = []
 @wss.on('connect', namespace='/Play')
 def oog():
     user = current_user.username
+
+    if user == 'admin':
+        clients.append(request.sid)
+
     wss.emit('new_response', {'data': user}, namespace='/Play', broadcast=True)
 
 @wss.on('disconnect', namespace='/Play')
