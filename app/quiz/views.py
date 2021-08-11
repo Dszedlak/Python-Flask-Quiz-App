@@ -15,15 +15,25 @@ from app import wss, app
 
 app.config["IMAGE_UPLOADS"] = "app/static/img/uploads"
 clients = []
+counter = 1
+
+@wss.on('next_question', namespace='/Play')
+def next_question(data):
+    global counter
+    counter = counter + 1
+    print(counter)
+    wss.emit('new_response', {'data': 'ooger'}, namespace='/Play', broadcast=True)
+
+@wss.on('previous_question', namespace='/Play')
+def next_question(data):
+    global counter
+    counter = counter - 1
+    print(counter)
+    wss.emit('new_response', {'data': 'ooger'}, namespace='/Play', broadcast=True)
 
 @wss.on('connect', namespace='/Play')
-def oog():
-    user = current_user.username
-
-    if user == 'admin':
-        clients.append(request.sid)
-
-    wss.emit('new_response', {'data': user}, namespace='/Play', broadcast=True)
+def oog(): 
+    wss.emit('new_response', {'data': 'ooger'}, namespace='/Play', broadcast=True)
 
 @wss.on('disconnect', namespace='/Play')
 def test():
@@ -32,6 +42,7 @@ def test():
 
 @wss.on('quiz_redirect')
 def start(data):
+    wss.sleep(1)
     print ('USER MESSAGE {}'.format(data))
     wss.emit('redirect', {'url': url_for('quiz.play')}, room=clients)
 
@@ -99,8 +110,9 @@ def unsubmit(data):
     #But do not leave the waiting room. Broadcast all changes that happen to users of the waiting room, as everyone is in that room anyway
 
 @wss.on('load_question_data', namespace='/Play')
-def testytest(question_num):
-    question = load_questions(int(question_num["data"]))
+def testytest(data):
+    question = load_questions(int(counter))
+    print(data)
     #recieve question num from client - starting num is 1.
     question_data = {
         'round' : question[0],
@@ -109,8 +121,7 @@ def testytest(question_num):
         'file':question[3],
         'points_worth':question[4],
         'question_type':question[6],
-        'question_options':question[7],
-    }
+        'question_options':question[7]    }
     #send question data as json object
     wss.emit('question', {'data': question_data}, namespace='/Play', broadcast=True)
     
@@ -145,10 +156,19 @@ def play():
     use websockets to load question on the same page
     timer runs out (example) and the server sends the question data back
     """
-    load_questions(1)
     # load registration template
+    quiz_admin = ""
 
-    return render_template('question/play.html',title='Question: Playing...')
+    isadminuser = User.query.filter_by(username=current_user.username).first()
+
+    print("WHAT SHOULD I PRINT HERE?")
+
+    if isadminuser.is_quiz_admin:
+        quiz_admin = True
+    else:
+        quiz_admin = False
+
+    return render_template('question/play.html',quiz_admin=quiz_admin,title='Question: Playing...')
 
 @quiz.route('/quiz/add', methods=['GET', 'POST'])
 @is_quiz_admin

@@ -12,7 +12,6 @@
     $(document).ready(function(){
 
     var socket = io.connect('ws://127.0.0.1:5000/');
-
     window.addEventListener('unload', function(e){
         e.preventDefault()
         e.stopImmediatePropagation();
